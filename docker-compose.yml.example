@@ -1,0 +1,39 @@
+version: "2"
+
+services:
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    restart: always
+    container_name: nginx-proxy
+    env_file:
+      - .env
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ../misskey-data/conf:/etc/nginx/conf.d
+      - ../misskey-data/vhost:/etc/nginx/vhost.d
+      - ../misskey-data/html:/usr/share/nginx/html
+      - ../misskey-data/certs:/etc/nginx/certs:ro
+    networks:
+      - misskey-web
+
+  letsencrypt:
+    image: nginxproxy/acme-companion
+    container_name: letsencrypt
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../misskey-data/conf:/etc/nginx/conf.d
+      - ../misskey-data/vhost:/etc/nginx/vhost.d
+      - ../misskey-data/html:/usr/share/nginx/html
+      - ../misskey-data/certs:/etc/nginx/certs:rw
+    volumes_from:
+      - nginx-proxy
+    networks:
+      - misskey-web
+
+networks:
+  misskey-web:
+    external: true
